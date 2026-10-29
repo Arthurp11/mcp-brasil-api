@@ -12,7 +12,7 @@ export async function fetchJson<T>(url: string, timeoutMs = 10_000): Promise<T> 
   try {
     response = await fetch(url, {
       signal: AbortSignal.timeout(timeoutMs),
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", "User-Agent": "mcp-brasil-api" },
     });
   } catch (error) {
     if (error instanceof Error && error.name === "TimeoutError") {
@@ -21,6 +21,13 @@ export async function fetchJson<T>(url: string, timeoutMs = 10_000): Promise<T> 
       });
     }
     throw new Error("Falha de conexão com a API. Tente novamente em instantes.", { cause: error });
+  }
+
+  if (response.status === 429) {
+    throw new HttpError(
+      "Limite de requisições da API atingido. Aguarde alguns segundos e tente novamente.",
+      429,
+    );
   }
 
   if (!response.ok) {
