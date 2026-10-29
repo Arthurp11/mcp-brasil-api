@@ -1,0 +1,31 @@
+{
+  // Referência das opções: https://aka.ms/tsconfig
+  "compilerOptions": {
+    // Estrutura: código em src/, compilado vai para dist/
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    // Ambiente: Node 22+ com ESM
+    "module": "nodenext",
+    "target": "es2023",
+    "lib": ["es2023"],
+    "types": ["node"],
+
+    // Saída
+    "sourceMap": true,
+
+    // Checagem de tipos
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Módulos
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

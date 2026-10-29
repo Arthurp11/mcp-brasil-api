@@ -1,0 +1,21 @@
+{
+  "name": "mcp-brasil-api",
+  "version": "0.1.0",
+  "description": "Servidor MCP com dados públicos brasileiros (CNPJ, CEP, feriados, municípios) via BrasilAPI e IBGE.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [],
+  "author": "Arthur",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^7.0.2"
+  }
+}
