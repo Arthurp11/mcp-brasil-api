@@ -9,7 +9,8 @@
     "dev": "tsc --watch",
     "lint": "biome lint .",
     "format": "biome format --write .",
-    "check": "biome check --write ."
+    "check": "biome check --write .",
+    "inspect": "mcp-inspector node dist/index.js"
   },
   "keywords": [],
   "author": "Arthur",
@@ -19,7 +20,15 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
+    "@modelcontextprotocol/inspector": "^2.13.0",
     "@types/node": "^22.20.5",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.4.0",
+    "zod": "^4.6.7"
+  },
+  "allowScripts": {
+    "@modelcontextprotocol/inspector": false
   }
 }
