@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { formatDate, isValidCnpj, normalizeCnpj, normalizeName, onlyDigits } from "./format.js";
+import {
+  formatDate,
+  isoDateInBrazil,
+  isValidCnpj,
+  matchesAllWords,
+  normalizeCnpj,
+  normalizeName,
+  onlyDigits,
+  toIsoDate,
+} from "./format.js";
 
 describe("onlyDigits", () => {
   test("remove tudo que não é dígito", () => {
@@ -56,5 +65,40 @@ describe("isValidCnpj", () => {
 describe("formatDate", () => {
   test("converte data ISO para o formato brasileiro", () => {
     assert.equal(formatDate("1966-08-01"), "01/08/1966");
+  });
+});
+
+describe("toIsoDate", () => {
+  test("converte DD/MM/AAAA para ISO e mantém datas já em ISO", () => {
+    assert.equal(toIsoDate("01/08/1966"), "1966-08-01");
+    assert.equal(toIsoDate("1966-08-01"), "1966-08-01");
+  });
+});
+
+describe("isoDateInBrazil", () => {
+  test("usa o fuso de Brasília e não o UTC", () => {
+    // 02:00 UTC de 21/11 ainda é 23:00 de 20/11 em Brasília
+    const now = new Date("2026-11-21T02:00:00Z");
+    assert.equal(isoDateInBrazil(0, now), "2026-11-20");
+    assert.equal(isoDateInBrazil(-1, now), "2026-11-19");
+  });
+
+  test("atravessa a virada de mês e de ano", () => {
+    assert.equal(isoDateInBrazil(-1, new Date("2027-01-01T15:00:00Z")), "2026-12-31");
+  });
+});
+
+describe("matchesAllWords", () => {
+  test("exige todas as palavras, em qualquer ordem, ignorando acentos", () => {
+    assert.equal(matchesAllWords("ITAÚ UNIBANCO S.A.", "itau"), true);
+    assert.equal(matchesAllWords("AMAROK High.CD 2.0 16V TDI", "high amarok"), true);
+    assert.equal(matchesAllWords("AMAROK High.CD 2.0 16V TDI", "amarok 3.0"), false);
+  });
+
+  test("cada palavra precisa começar uma palavra do texto", () => {
+    assert.equal(matchesAllWords("Polo 1.0 TSI", "polo"), true);
+    assert.equal(matchesAllWords("Apolo GL 1.8", "polo"), false);
+    assert.equal(matchesAllWords("Banco ItauBank S.A.", "itau"), true);
+    assert.equal(matchesAllWords("ONIX HATCH 1.0", "1.0"), true);
   });
 });
