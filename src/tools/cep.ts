@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { onlyDigits } from "../lib/format.js";
 import { fetchJson, HttpError } from "../lib/http.js";
+import { errorMessage, errorResult, textResult } from "../lib/result.js";
 
 interface CepResponse {
   cep: string;
@@ -39,20 +40,12 @@ export function registerCepTool(server: McpServer): void {
           `Cidade: ${data.city}/${data.state}`,
         ].join("\n");
 
-        return { content: [{ type: "text", text }] };
+        return textResult(text);
       } catch (error) {
         if (error instanceof HttpError && error.status === 404) {
-          return {
-            content: [{ type: "text", text: `CEP ${cep} não encontrado.` }],
-            isError: true,
-          };
+          return errorResult(`CEP ${cep} não encontrado.`);
         }
-
-        const message = error instanceof Error ? error.message : "Erro desconhecido.";
-        return {
-          content: [{ type: "text", text: `Erro ao consultar o CEP ${cep}: ${message}` }],
-          isError: true,
-        };
+        return errorResult(`Erro ao consultar o CEP ${cep}: ${errorMessage(error)}`);
       }
     },
   );

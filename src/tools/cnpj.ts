@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { formatDate, isValidCnpj, normalizeCnpj } from "../lib/format.js";
 import { fetchJson, HttpError } from "../lib/http.js";
+import { errorMessage, errorResult, textResult } from "../lib/result.js";
 
 const MAX_SOCIOS = 10;
 
@@ -86,20 +87,12 @@ export function registerCnpjTool(server: McpServer): void {
         const data = await fetchJson<CnpjResponse>(
           `https://brasilapi.com.br/api/cnpj/v1/${normalizeCnpj(cnpj)}`,
         );
-        return { content: [{ type: "text", text: formatCnpj(data) }] };
+        return textResult(formatCnpj(data));
       } catch (error) {
         if (error instanceof HttpError && error.status === 404) {
-          return {
-            content: [{ type: "text", text: `CNPJ ${cnpj} não encontrado.` }],
-            isError: true,
-          };
+          return errorResult(`CNPJ ${cnpj} não encontrado.`);
         }
-
-        const message = error instanceof Error ? error.message : "Erro desconhecido.";
-        return {
-          content: [{ type: "text", text: `Erro ao consultar o CNPJ ${cnpj}: ${message}` }],
-          isError: true,
-        };
+        return errorResult(`Erro ao consultar o CNPJ ${cnpj}: ${errorMessage(error)}`);
       }
     },
   );

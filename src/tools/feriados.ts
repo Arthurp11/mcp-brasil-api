@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { formatDate } from "../lib/format.js";
 import { fetchJson } from "../lib/http.js";
+import { errorMessage, errorResult, textResult } from "../lib/result.js";
 
 interface Feriado {
   date: string;
@@ -42,13 +43,9 @@ export function registerFeriadosTool(server: McpServer): void {
         });
 
         const text = [`Feriados nacionais em ${year} (${feriados.length}):`, ...lines].join("\n");
-        return { content: [{ type: "text", text }] };
+        return textResult(text);
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Erro desconhecido.";
-        return {
-          content: [{ type: "text", text: `Erro ao listar os feriados de ${year}: ${message}` }],
-          isError: true,
-        };
+        return errorResult(`Erro ao listar os feriados de ${year}: ${errorMessage(error)}`);
       }
     },
   );

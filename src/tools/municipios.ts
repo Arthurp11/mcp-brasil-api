@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { normalizeName } from "../lib/format.js";
 import { fetchJson } from "../lib/http.js";
+import { errorMessage, errorResult, textResult } from "../lib/result.js";
 
 const UFS = [
   "AC",
@@ -79,11 +80,7 @@ export function registerMunicipiosTool(server: McpServer): void {
           );
 
           if (encontrados.length === 0) {
-            return {
-              content: [
-                { type: "text", text: `Nenhum município com "${nome}" no nome em ${estado}.` },
-              ],
-            };
+            return textResult(`Nenhum município com "${nome}" no nome em ${estado}.`);
           }
 
           const lines = encontrados.map(
@@ -94,7 +91,7 @@ export function registerMunicipiosTool(server: McpServer): void {
             `Municípios de ${estado} com "${nome}" no nome (${encontrados.length}):`,
             ...lines,
           ].join("\n");
-          return { content: [{ type: "text", text }] };
+          return textResult(text);
         }
 
         const lines = todos
@@ -110,13 +107,9 @@ export function registerMunicipiosTool(server: McpServer): void {
           `${estado} tem ${todos.length} municípios (nome e código IBGE):`,
           ...lines,
         ].join("\n");
-        return { content: [{ type: "text", text }] };
+        return textResult(text);
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Erro desconhecido.";
-        return {
-          content: [{ type: "text", text: `Erro ao listar os municípios de ${uf}: ${message}` }],
-          isError: true,
-        };
+        return errorResult(`Erro ao listar os municípios de ${uf}: ${errorMessage(error)}`);
       }
     },
   );

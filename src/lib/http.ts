@@ -31,8 +31,21 @@ export async function fetchJson<T>(url: string, timeoutMs = 10_000): Promise<T> 
   }
 
   if (!response.ok) {
-    throw new HttpError(`A API respondeu com erro (status ${response.status}).`, response.status);
+    const detail = await readErrorMessage(response);
+    const message = `A API respondeu com erro (status ${response.status})`;
+    throw new HttpError(detail ? `${message}: ${detail}` : `${message}.`, response.status);
   }
 
   return (await response.json()) as T;
+}
+
+/** Tenta extrair a mensagem de erro do corpo da resposta ({ message } ou { error }). */
+async function readErrorMessage(response: Response): Promise<string | undefined> {
+  try {
+    const body = (await response.json()) as { message?: unknown; error?: unknown };
+    const detail = body.message ?? body.error;
+    return typeof detail === "string" ? detail : undefined;
+  } catch {
+    return undefined;
+  }
 }
