@@ -4,15 +4,31 @@
   "description": "Servidor MCP com dados públicos brasileiros (CNPJ, CEP, feriados, municípios) via BrasilAPI e IBGE.",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "mcp-brasil-api": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "test": "tsc && node --test \"dist/**/*.test.js\"",
+    "prepublishOnly": "npm test",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write .",
     "inspect": "mcp-inspector node dist/index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "brasilapi",
+    "ibge",
+    "cnpj",
+    "cep"
+  ],
   "author": "Arthur",
   "license": "MIT",
   "engines": {
