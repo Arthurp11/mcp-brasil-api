@@ -1,0 +1,37 @@
+name: Publish
+
+# Publica no npm ao enviar uma tag de versão, ex: v0.2.0
+# Fluxo: `npm version minor` e depois `git push --follow-tags`
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write # necessário para o trusted publishing (OIDC) do npm
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Conferir se a tag bate com a versão do package.json
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$PKG_VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME diferente da versão do package.json ($PKG_VERSION)"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npx biome ci .
+
+      # O prepublishOnly roda `npm test` (build + testes) antes de publicar
+      - run: npm publish

@@ -1,5 +1,8 @@
 # mcp-brasil-api
 
+[![CI](https://github.com/Arthurp11/mcp-brasil-api/actions/workflows/ci.yml/badge.svg)](https://github.com/Arthurp11/mcp-brasil-api/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/mcp-brasil-api)](https://www.npmjs.com/package/mcp-brasil-api)
+
 Projeto pessoal para aprender: um servidor MCP que expõe dados públicos brasileiros (BrasilAPI + IBGE) como tools para IAs.
 
 ## Tools

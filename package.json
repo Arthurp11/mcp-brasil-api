@@ -30,6 +30,12 @@
     "cep"
   ],
   "author": "Arthur",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arthurp11/mcp-brasil-api.git"
+  },
+  "homepage": "https://github.com/Arthurp11/mcp-brasil-api#readme",
+  "bugs": "https://github.com/Arthurp11/mcp-brasil-api/issues",
   "license": "MIT",
   "engines": {
     "node": ">=22"
