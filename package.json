@@ -1,6 +1,6 @@
 {
   "name": "mcp-brasil-api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Servidor MCP com dados públicos brasileiros (CNPJ, CEP, feriados, municípios, DDD, bancos, câmbio e tabela FIPE) via BrasilAPI, IBGE e FIPE.",
   "type": "module",
   "main": "dist/index.js",
