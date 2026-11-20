@@ -14,25 +14,52 @@ Projeto pessoal para aprender: um servidor MCP que expõe dados públicos brasil
 | `listar_feriados`   | Feriados nacionais de um ano (padrão: ano atual)                    | BrasilAPI |
 | `listar_municipios` | Municípios de uma UF com código IBGE, com filtro opcional por nome  | IBGE      |
 
-## Como usar
+## Instalação
 
-Requer Node 22+.
+Requer Node 22+. Não precisa clonar o repositório: o pacote está no npm e roda via `npx`.
+
+**Claude Code:**
+
+```bash
+claude mcp add brasil-api -- npx -y mcp-brasil-api
+```
+
+**Claude Desktop, Cursor e outros clientes MCP** — adicione ao arquivo de configuração de servidores MCP do cliente:
+
+```json
+{
+  "mcpServers": {
+    "brasil-api": {
+      "command": "npx",
+      "args": ["-y", "mcp-brasil-api"]
+    }
+  }
+}
+```
+
+Depois é só pedir em linguagem natural, por exemplo: _"qual o endereço do CEP 01001-000?"_ ou _"quais os feriados de 2027?"_.
+
+## Desenvolvimento
 
 ```bash
 npm install
 npm run build
-npm test          # roda os testes unitários
+npm test          # compila e roda os testes unitários
+npm run check     # lint + formatação (Biome)
 npm run inspect   # testa as tools no MCP Inspector
 ```
 
-Para usar no Claude Code:
+Para usar a versão local no Claude Code:
 
 ```bash
-claude mcp add brasil-api -- node /caminho/para/mcp-brasil-api/dist/index.js
+claude mcp add brasil-api-dev -- node /caminho/para/mcp-brasil-api/dist/index.js
 ```
 
-Ou instale o comando globalmente (`npm install -g .` dentro da pasta) e use:
+## Publicando uma nova versão
+
+O CI roda lint e testes a cada push. A publicação no npm é feita pelo GitHub Actions (trusted publishing, sem token) quando uma tag de versão é enviada:
 
 ```bash
-claude mcp add brasil-api -- mcp-brasil-api
+npm version patch        # ou minor/major: atualiza o package.json, commita e cria a tag
+git push --follow-tags
 ```
