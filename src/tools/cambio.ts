@@ -1,10 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import { formatDate, isoDateInBrazil, toIsoDate } from "../lib/format.js";
+import { formatDate, getYesterday, toIsoDate } from "../lib/format.js";
 import { fetchJson } from "../lib/http.js";
 import { errorMessage, errorResult, textResult } from "../lib/result.js";
 
-/** Moedas com cotação publicada pelo Banco Central e disponíveis na BrasilAPI. */
 const MOEDAS = ["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "DKK", "NOK", "SEK"] as const;
 
 interface Cotacao {
@@ -35,7 +34,8 @@ export function registerCambioTool(server: McpServer): void {
       inputSchema: z.object({
         moeda: z
           .string()
-          .transform((value) => value.trim().toUpperCase())
+          .trim()
+          .toUpperCase()
           .pipe(z.enum(MOEDAS, `Moeda inválida. Disponíveis: ${MOEDAS.join(", ")}.`))
           .describe(`Código da moeda: ${MOEDAS.join(", ")}`),
         data: z
@@ -52,14 +52,15 @@ export function registerCambioTool(server: McpServer): void {
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async ({ moeda, data }) => {
-      const iso = data ? toIsoDate(data) : isoDateInBrazil(-1);
+      // a API não tem a cotação do dia atual, então o padrão é ontem
+      const iso = data ? toIsoDate(data) : getYesterday();
 
       try {
         const res = await fetchJson<CambioResponse>(
           `https://brasilapi.com.br/api/cambio/v1/cotacao/${moeda}/${iso}`,
         );
 
-        // O último boletim do dia é o de fechamento (PTAX)
+        // o último boletim do dia é o de fechamento
         const ultima = res.cotacoes.at(-1);
         if (!ultima) {
           return errorResult(`Sem cotação de ${moeda} para ${formatDate(iso)}.`);
@@ -73,7 +74,7 @@ export function registerCambioTool(server: McpServer): void {
         ];
         if (dataCotacao !== iso) {
           lines.push(
-            `Obs: ${formatDate(iso)} não teve cotação (fim de semana ou feriado); mostrando o último dia útil anterior.`,
+            `Obs: ${formatDate(iso)} não teve cotação (fim de semana ou feriado), mostrando o último dia útil anterior.`,
           );
         }
         return textResult(lines.join("\n"));

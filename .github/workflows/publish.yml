@@ -1,14 +1,13 @@
 name: Publish
 
-# Publica no npm ao enviar uma tag de versão, ex: v0.2.0
-# Fluxo: `npm version minor` e depois `git push --follow-tags`
+# roda quando envio uma tag de versão (npm version + git push --follow-tags)
 on:
   push:
     tags: ["v*"]
 
 permissions:
   contents: read
-  id-token: write # necessário para o trusted publishing (OIDC) do npm
+  id-token: write # para o trusted publishing do npm
 
 jobs:
   publish:
@@ -32,6 +31,4 @@ jobs:
 
       - run: npm ci
       - run: npx biome ci .
-
-      # O prepublishOnly roda `npm test` (build + testes) antes de publicar
       - run: npm publish

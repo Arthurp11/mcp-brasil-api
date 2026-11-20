@@ -34,13 +34,12 @@ const UFS = [
   "TO",
 ] as const;
 
-/** Limite de municípios listados quando não há filtro (SP tem 645, MG tem 853). */
+// SP tem 645 municípios e MG tem 853, então sem filtro mostra só os primeiros
 const MAX_SEM_FILTRO = 100;
 
 interface Municipio {
   "municipio-id": number;
   "municipio-nome": string;
-  "microrregiao-nome": string;
   "regiao-imediata-nome": string;
   "UF-nome": string;
 }
@@ -55,7 +54,8 @@ export function registerMunicipiosTool(server: McpServer): void {
       inputSchema: z.object({
         uf: z
           .string()
-          .transform((value) => value.trim().toUpperCase())
+          .trim()
+          .toUpperCase()
           .pipe(z.enum(UFS, "UF inválida. Use a sigla do estado com 2 letras, ex: 'SP'."))
           .describe("Sigla do estado. Ex: 'SP', 'rj', 'MG'"),
         nome: z

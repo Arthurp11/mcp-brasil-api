@@ -6,7 +6,7 @@ import { errorMessage, errorResult, textResult } from "../lib/result.js";
 
 const MAX_RESULTADOS = 20;
 
-/** Nomes comerciais que não aparecem no cadastro oficial do Banco Central. */
+// nomes conhecidos que não aparecem no cadastro oficial
 const APELIDOS: Record<string, string> = {
   nubank: "nu",
   pagbank: "pagseguro",

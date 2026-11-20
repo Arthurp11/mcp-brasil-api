@@ -9,7 +9,7 @@ import { registerFeriadosTool } from "./tools/feriados.js";
 import { registerFipeTools } from "./tools/fipe.js";
 import { registerMunicipiosTool } from "./tools/municipios.js";
 
-// Lê nome e versão do package.json (fica em ../ tanto a partir de src/ quanto de dist/)
+// pega nome e versão do package.json para não precisar atualizar em dois lugares
 const pkg = createRequire(import.meta.url)("../package.json") as { name: string; version: string };
 
 export function createServer(): McpServer {

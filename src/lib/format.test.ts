@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import {
   formatDate,
-  isoDateInBrazil,
+  getYesterday,
   isValidCnpj,
   matchesAllWords,
   normalizeCnpj,
@@ -75,16 +75,14 @@ describe("toIsoDate", () => {
   });
 });
 
-describe("isoDateInBrazil", () => {
-  test("usa o fuso de Brasília e não o UTC", () => {
-    // 02:00 UTC de 21/11 ainda é 23:00 de 20/11 em Brasília
-    const now = new Date("2026-11-21T02:00:00Z");
-    assert.equal(isoDateInBrazil(0, now), "2026-11-20");
-    assert.equal(isoDateInBrazil(-1, now), "2026-11-19");
+describe("getYesterday", () => {
+  test("usa o horário de Brasília", () => {
+    // 02:00 UTC do dia 21 ainda é dia 20 em Brasília, então ontem é dia 19
+    assert.equal(getYesterday(new Date("2026-11-21T02:00:00Z")), "2026-11-19");
   });
 
-  test("atravessa a virada de mês e de ano", () => {
-    assert.equal(isoDateInBrazil(-1, new Date("2027-01-01T15:00:00Z")), "2026-12-31");
+  test("funciona na virada do ano", () => {
+    assert.equal(getYesterday(new Date("2027-01-01T15:00:00Z")), "2026-12-31");
   });
 });
 
@@ -100,5 +98,6 @@ describe("matchesAllWords", () => {
     assert.equal(matchesAllWords("Apolo GL 1.8", "polo"), false);
     assert.equal(matchesAllWords("Banco ItauBank S.A.", "itau"), true);
     assert.equal(matchesAllWords("ONIX HATCH 1.0", "1.0"), true);
+    assert.equal(matchesAllWords("BCO SANTANDER (BRASIL) S.A.", "santander brasil"), true);
   });
 });

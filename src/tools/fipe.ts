@@ -4,18 +4,16 @@ import { matchesAllWords, normalizeName } from "../lib/format.js";
 import { fetchJson, HttpError } from "../lib/http.js";
 import { errorMessage, errorResult, textResult } from "../lib/result.js";
 
-/**
- * A BrasilAPI não permite chegar do nome do modelo ao código FIPE, então usamos a
- * API pública da Parallelum (sem token: 500 requisições por dia).
- */
+// A FIPE da BrasilAPI não devolve o código FIPE na lista de modelos,
+// então uso a API da Parallelum (limite de 500 consultas por dia sem token)
 const FIPE_API = "https://fipe.parallelum.com.br/api/v2";
 const MAX_MODELOS = 30;
 
-const TIPOS = { carros: "cars", motos: "motorcycles", caminhoes: "trucks" } as const;
-type Tipo = keyof typeof TIPOS;
-
-/** Na FIPE, o ano 32000 representa veículo zero km. */
-const ANO_ZERO_KM = "32000";
+const TIPOS = {
+  carros: "cars",
+  motos: "motorcycles",
+  caminhoes: "trucks",
+};
 
 interface Item {
   code: string;
@@ -33,30 +31,16 @@ interface Preco {
 }
 
 const tipoSchema = z
-  .enum(
-    Object.keys(TIPOS) as [Tipo, ...Tipo[]],
-    "Tipo inválido. Use 'carros', 'motos' ou 'caminhoes'.",
-  )
+  .enum(["carros", "motos", "caminhoes"], "Tipo inválido. Use 'carros', 'motos' ou 'caminhoes'.")
   .default("carros")
   .describe("Tipo de veículo: 'carros' (padrão), 'motos' ou 'caminhoes'");
 
+// Na FIPE o ano 32000 significa zero km
 function formatAno(ano: Item): string {
-  return ano.code.startsWith(`${ANO_ZERO_KM}-`)
-    ? ano.name.replace(ANO_ZERO_KM, "Zero KM")
-    : ano.name;
+  return ano.name.replace("32000", "Zero KM");
 }
 
-/** Escolhe a marca pelo nome: igual ao digitado tem prioridade; senão, a única que contém o termo. */
-function findMarca(marcas: Item[], busca: string): Item | Item[] {
-  const termo = normalizeName(busca);
-  const exata = marcas.find((m) => normalizeName(m.name) === termo);
-  if (exata) return exata;
-
-  const parciais = marcas.filter((m) => normalizeName(m.name).includes(termo));
-  return parciais.length === 1 && parciais[0] ? parciais[0] : parciais;
-}
-
-function registerBuscarModelos(server: McpServer): void {
+function registerBuscarVeiculo(server: McpServer): void {
   server.registerTool(
     "buscar_veiculo_fipe",
     {
@@ -82,51 +66,56 @@ function registerBuscarModelos(server: McpServer): void {
     async ({ tipo, marca, modelo }) => {
       try {
         const marcas = await fetchJson<Item[]>(`${FIPE_API}/${TIPOS[tipo]}/brands`);
-        const resultado = findMarca(marcas, marca);
 
-        if (Array.isArray(resultado)) {
-          if (resultado.length === 0) {
-            return errorResult(
-              `Nenhuma marca de ${tipo} com "${marca}" no nome. Algumas marcas: ${marcas
-                .slice(0, 40)
-                .map((m) => m.name)
-                .join(", ")}.`,
-            );
-          }
-          const lista = resultado.map((m) => `- ${m.name} (código ${m.code})`).join("\n");
-          return textResult(
-            `Mais de uma marca corresponde a "${marca}". Repita a busca com o nome exato:\n${lista}`,
+        // primeiro tenta o nome exato, depois qualquer marca que contenha o texto
+        const termo = normalizeName(marca);
+        let encontradas = marcas.filter((m) => normalizeName(m.name) === termo);
+        if (encontradas.length === 0) {
+          encontradas = marcas.filter((m) => normalizeName(m.name).includes(termo));
+        }
+
+        if (encontradas.length === 0) {
+          const exemplos = marcas.slice(0, 40).map((m) => m.name);
+          return errorResult(
+            `Nenhuma marca de ${tipo} com "${marca}" no nome. Algumas marcas: ${exemplos.join(", ")}.`,
           );
         }
 
+        if (encontradas.length > 1) {
+          const lista = encontradas.map((m) => `- ${m.name}`).join("\n");
+          return textResult(`Mais de uma marca encontrada. Repita com o nome exato:\n${lista}`);
+        }
+
+        const marcaEscolhida = encontradas[0] as Item;
         const modelos = await fetchJson<Item[]>(
-          `${FIPE_API}/${TIPOS[tipo]}/brands/${resultado.code}/models`,
+          `${FIPE_API}/${TIPOS[tipo]}/brands/${marcaEscolhida.code}/models`,
         );
-        const filtrados = modelo ? modelos.filter((m) => matchesAllWords(m.name, modelo)) : modelos;
+
+        let filtrados = modelos;
+        if (modelo) {
+          filtrados = modelos.filter((m) => matchesAllWords(m.name, modelo));
+        }
 
         if (filtrados.length === 0) {
           return textResult(
-            `Nenhum modelo da ${resultado.name} com "${modelo}" no nome. Tente menos palavras.`,
+            `Nenhum modelo da ${marcaEscolhida.name} com "${modelo}" no nome. Tente menos palavras.`,
           );
         }
 
-        const lines = filtrados
-          .slice(0, MAX_MODELOS)
-          .map((m) => `- ${m.name} (codigo_modelo ${m.code})`);
+        const lines = [
+          `Marca: ${marcaEscolhida.name} (codigo_marca ${marcaEscolhida.code})`,
+          `Modelos encontrados (${filtrados.length}):`,
+        ];
+        for (const m of filtrados.slice(0, MAX_MODELOS)) {
+          lines.push(`- ${m.name} (codigo_modelo ${m.code})`);
+        }
         if (filtrados.length > MAX_MODELOS) {
           lines.push(
             `... e mais ${filtrados.length - MAX_MODELOS} modelos. Use o parâmetro 'modelo' para filtrar.`,
           );
         }
 
-        const titulo = modelo ? `Modelos com "${modelo}"` : "Modelos";
-        return textResult(
-          [
-            `Marca: ${resultado.name} (codigo_marca ${resultado.code})`,
-            `${titulo} (${filtrados.length}):`,
-            ...lines,
-          ].join("\n"),
-        );
+        return textResult(lines.join("\n"));
       } catch (error) {
         return errorResult(`Erro ao buscar veículos na FIPE: ${errorMessage(error)}`);
       }
@@ -167,21 +156,27 @@ function registerConsultarPreco(server: McpServer): void {
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async ({ tipo, codigo_fipe, codigo_marca, codigo_modelo, ano }) => {
-      const base = codigo_fipe
-        ? `${FIPE_API}/${TIPOS[tipo]}/${codigo_fipe}/years`
-        : `${FIPE_API}/${TIPOS[tipo]}/brands/${codigo_marca}/models/${codigo_modelo}/years`;
+      let url = `${FIPE_API}/${TIPOS[tipo]}/brands/${codigo_marca}/models/${codigo_modelo}/years`;
+      if (codigo_fipe) {
+        url = `${FIPE_API}/${TIPOS[tipo]}/${codigo_fipe}/years`;
+      }
 
       try {
-        const anos = await fetchJson<Item[]>(base);
+        const anos = await fetchJson<Item[]>(url);
         const listaAnos = anos.map((a) => `- ${formatAno(a)} (ano '${a.code}')`).join("\n");
 
         if (!ano) {
           return textResult(`Anos disponíveis (${anos.length}):\n${listaAnos}`);
         }
 
-        // Aceita "2016", "0km" ou o código completo "2016-3" (ano-combustível)
-        const termo = /^(0\s*km|zero\s*km)$/i.test(ano) ? ANO_ZERO_KM : ano;
-        const candidatos = anos.filter((a) => a.code === termo || a.code.startsWith(`${termo}-`));
+        // o código do ano vem como "2016-3" (ano-combustível)
+        let anoBuscado = ano;
+        if (ano.toLowerCase().replace(" ", "") === "0km") {
+          anoBuscado = "32000";
+        }
+        const candidatos = anos.filter(
+          (a) => a.code === anoBuscado || a.code.startsWith(`${anoBuscado}-`),
+        );
 
         if (candidatos.length === 0) {
           return errorResult(`Ano ${ano} não disponível para este veículo. Anos:\n${listaAnos}`);
@@ -193,14 +188,17 @@ function registerConsultarPreco(server: McpServer): void {
           );
         }
 
-        const p = await fetchJson<Preco>(`${base}/${candidatos[0]?.code}`);
-        const anoModelo = String(p.modelYear) === ANO_ZERO_KM ? "Zero KM" : p.modelYear;
+        const anoEscolhido = candidatos[0] as Item;
+        const preco = await fetchJson<Preco>(`${url}/${anoEscolhido.code}`);
+        const anoModelo = preco.modelYear === 32000 ? "Zero KM" : preco.modelYear;
+
         const text = [
-          `${p.brand} ${p.model}`,
-          `Ano: ${anoModelo} · Combustível: ${p.fuel}`,
-          `Preço FIPE: ${p.price}`,
-          `Código FIPE: ${p.codeFipe}`,
-          `Referência: ${p.referenceMonth}`,
+          `${preco.brand} ${preco.model}`,
+          `Ano: ${anoModelo}`,
+          `Combustível: ${preco.fuel}`,
+          `Preço FIPE: ${preco.price}`,
+          `Código FIPE: ${preco.codeFipe}`,
+          `Referência: ${preco.referenceMonth}`,
         ].join("\n");
         return textResult(text);
       } catch (error) {
@@ -214,6 +212,6 @@ function registerConsultarPreco(server: McpServer): void {
 }
 
 export function registerFipeTools(server: McpServer): void {
-  registerBuscarModelos(server);
+  registerBuscarVeiculo(server);
   registerConsultarPreco(server);
 }

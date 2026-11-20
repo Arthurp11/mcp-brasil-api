@@ -31,7 +31,7 @@ Requer Node 22+. Não precisa clonar o repositório: o pacote está no npm e rod
 claude mcp add brasil-api -- npx -y mcp-brasil-api
 ```
 
-**Claude Desktop, Cursor e outros clientes MCP** — adicione ao arquivo de configuração de servidores MCP do cliente:
+**Claude Desktop, Cursor e outros clientes MCP:** adicione no arquivo de configuração do cliente:
 
 ```json
 {
@@ -64,7 +64,7 @@ claude mcp add brasil-api-dev -- node /caminho/para/mcp-brasil-api/dist/index.js
 
 ## Publicando uma nova versão
 
-O CI roda lint e testes a cada push. A publicação no npm é feita pelo GitHub Actions (trusted publishing, sem token) quando uma tag de versão é enviada:
+O CI roda lint e testes a cada push. Para publicar no npm é só criar uma tag de versão, o GitHub Actions faz o resto:
 
 ```bash
 npm version patch        # ou minor/major: atualiza o package.json, commita e cria a tag

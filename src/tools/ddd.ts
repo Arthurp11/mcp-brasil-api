@@ -18,9 +18,8 @@ export function registerDddTool(server: McpServer): void {
       inputSchema: z.object({
         ddd: z
           .string()
-          .regex(/^\(?\d{2}\)?$/, "DDD inválido. Deve conter 2 dígitos.")
-          .transform((value) => value.replace(/\D/g, ""))
-          .describe("Código DDD com 2 dígitos. Ex: '11', '21', '(61)'"),
+          .regex(/^\d{2}$/, "DDD inválido. Deve conter 2 dígitos.")
+          .describe("Código DDD com 2 dígitos. Ex: '11', '21'"),
       }),
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
@@ -30,7 +29,7 @@ export function registerDddTool(server: McpServer): void {
         const cidades = [...data.cities].sort((a, b) => a.localeCompare(b, "pt-BR"));
 
         const text = [
-          `DDD ${ddd} — ${data.state}, ${cidades.length} cidades:`,
+          `DDD ${ddd} (${data.state}), ${cidades.length} cidades:`,
           cidades.join(", "),
         ].join("\n");
         return textResult(text);

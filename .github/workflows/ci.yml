@@ -21,9 +21,5 @@ jobs:
           cache: npm
 
       - run: npm ci
-
-      # Falha se houver erro de lint ou código fora da formatação (não altera arquivos)
       - run: npx biome ci .
-
-      # Compila e roda os testes unitários
       - run: npm test
