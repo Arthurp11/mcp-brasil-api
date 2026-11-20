@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { normalizeName } from "../lib/format.js";
 import { fetchJson } from "../lib/http.js";
 
 const UFS = [
@@ -41,15 +42,6 @@ interface Municipio {
   "microrregiao-nome": string;
   "regiao-imediata-nome": string;
   "UF-nome": string;
-}
-
-/** Remove acentos e deixa em minúsculas, para comparar nomes. Ex: "São Paulo" -> "sao paulo" */
-function normalizeName(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
 }
 
 export function registerMunicipiosTool(server: McpServer): void {

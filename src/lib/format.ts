@@ -2,6 +2,15 @@ export function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+/** Remove acentos e deixa em minúsculas, para comparar nomes. Ex: "São Paulo" -> "sao paulo" */
+export function normalizeName(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+}
+
 /** Remove pontuação e deixa em maiúsculas. Ex: "12.abc.345/01de-35" -> "12ABC34501DE35" */
 export function normalizeCnpj(value: string): string {
   return value.replace(/[.\-/\s]/g, "").toUpperCase();
